@@ -8,7 +8,7 @@ This repository contains a Jupyter Notebook for evaluating retrieval models usin
 
 ## What is BEIR?
 
-BEIR (Benchmark for Evaluation of Information Retrieval) is a heterogeneous benchmark designed for zero-shot evaluation of information retrieval models. BEIR contains diverse retrieval tasks and different datasets, allowing for comprehensive evaluation of state-of-the-art retrieval models in a zero-shot setup.
+[BEIR](https://github.com/beir-cellar/beir) (Benchmark for Evaluation of Information Retrieval) is a heterogeneous benchmark designed for zero-shot evaluation of information retrieval models. BEIR contains diverse retrieval tasks and different datasets, allowing for comprehensive evaluation of state-of-the-art retrieval models in a zero-shot setup.
 
 ## Setup
 
