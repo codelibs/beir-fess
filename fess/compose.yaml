@@ -1,0 +1,65 @@
+services:
+  fess01:
+    image: ghcr.io/codelibs/fess:snapshot
+    container_name: fess01
+    environment:
+      - "SEARCH_ENGINE_HTTP_URL=http://engine01:9200"
+      - "FESS_DICTIONARY_PATH=${FESS_DICTIONARY_PATH:-/usr/share/opensearch/config/dictionary/}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./access_token.bulk:/usr/share/fess/app/WEB-INF/classes/fess_indices/fess_config.access_token/access_token.bulk
+    networks:
+      - searchnet
+    depends_on:
+      - engine01
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    restart: unless-stopped
+  engine01:
+    image: ghcr.io/codelibs/fess-opensearch:2.15.0
+    container_name: engine01
+    environment:
+      - node.name=engine01
+      - discovery.seed_hosts=engine01
+      - cluster.initial_cluster_manager_nodes=engine01
+      - cluster.name=fess-es
+      - bootstrap.memory_lock=true
+      - node.roles=cluster_manager,data,ingest,ml
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - "FESS_DICTIONARY_PATH=/usr/share/opensearch/config/dictionary"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+    volumes:
+      - enginedata01:/usr/share/opensearch/data
+      - enginedictionary01:/usr/share/opensearch/config/dictionary
+    ports:
+      - 9200:9200
+    networks:
+      - searchnet
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    restart: unless-stopped
+
+volumes:
+  enginedata01:
+    driver: local
+  enginedictionary01:
+    driver: local
+
+networks:
+  searchnet:
+    driver: bridge
