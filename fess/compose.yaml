@@ -1,7 +1,7 @@
 services:
   fess01:
     image: ghcr.io/codelibs/fess:snapshot
-    container_name: fess01
+    container_name: beir-fess01
     environment:
       - "SEARCH_ENGINE_HTTP_URL=http://engine01:9200"
       - "FESS_DICTIONARY_PATH=${FESS_DICTIONARY_PATH:-/usr/share/opensearch/config/dictionary/}"
@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
   engine01:
     image: ghcr.io/codelibs/fess-opensearch:2.15.0
-    container_name: engine01
+    container_name: beir-engine01
     environment:
       - node.name=engine01
       - discovery.seed_hosts=engine01
