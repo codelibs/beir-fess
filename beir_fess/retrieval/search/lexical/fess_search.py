@@ -13,7 +13,7 @@ def sleep(seconds):
 
 class FessSearch(BaseSearch):
     def __init__(self, index_name: str, hostname: str = "http://localhost:8080", access_token: str = None,
-                 language: str = "en", initialize: bool = True, sleep_for: int = 2):
+                 language: str = "en", initialize: bool = True, bulk_size: int = 100, sleep_for: int = 2):
         self.results = {}
         self.initialize = initialize
         self.sleep_for = sleep_for
@@ -21,6 +21,7 @@ class FessSearch(BaseSearch):
         self.hostname = hostname
         self.access_token = access_token
         self.language = language
+        self.bulk_size = bulk_size
         if self.initialize:
             self.initialise()
         symbols = string.punctuation
@@ -87,36 +88,44 @@ class FessSearch(BaseSearch):
 
     def index(self, corpus: Dict[str, Dict[str, str]]):
         progress = tqdm.tqdm(unit="docs", total=len(corpus))
-        for idx in corpus:
-            title = corpus[idx].get("title", None)
-            content = corpus[idx].get("text", None)
-            response = requests.put(f"{self.hostname}/api/admin/searchlist/doc",
+        def send_bulk(bulk_data):
+            response = requests.post(f"{self.hostname}/api/admin/documents/bulk",
                                     headers={
                                         "Content-Type": "application/json",
                                         "Authorization": self.access_token
                                     },
                                     json={
-                                        "doc": {
-                                            "lang": self.language,
-                                            "title": title,
-                                            "content": content,
-                                            "content_length": f"{len(content)}",
-                                            "url": f"http://beir.codelibs.org/{self.index_name}/{idx}",
-                                            "host": "beir.codelibs.org",
-                                            "site": f"beir.codelibs.org/{self.index_name}/{idx}",
-                                            "filename": f"{idx}.html",
-                                            "mimetype": "text/plain",
-                                            "filetype": "text",
-                                            "click_count": "0",
-                                            "favorite_count": "0",
-                                            "boost": "1.0",
-                                            "last_modified": "1970-01-01T00:00:00.000Z",
-                                            "timestamp": "1970-01-01T00:00:00.000Z",
-                                            "created": "1970-01-01T00:00:00.000Z",
-                                            "role": "Rguest"
-                                        }
+                                        "documents": bulk_data
                                     })
             if response.json().get("response", {}).get("status") != 0:
-                raise ValueError(f"{idx} could not be indexed.")
-            progress.update(1)
+                raise ValueError(f"response: {response.json()}")
+            progress.update(len(bulk_data))
+        docs: List[Dict[str, Any]] = []
+        for idx in corpus:
+            title = corpus[idx].get("title", None)
+            content = corpus[idx].get("text", None)
+            docs.append({
+                "lang": self.language,
+                "title": title,
+                "content": content,
+                "content_length": f"{len(content)}",
+                "url": f"http://beir.codelibs.org/{self.index_name}/{idx}",
+                "host": "beir.codelibs.org",
+                "site": f"beir.codelibs.org/{self.index_name}/{idx}",
+                "filename": f"{idx}.html",
+                "mimetype": "text/plain",
+                "filetype": "text",
+                "click_count": 0,
+                "favorite_count": 0,
+                "boost": 1.0,
+                "last_modified": "1970-01-01T00:00:00.000Z",
+                "timestamp": "1970-01-01T00:00:00.000Z",
+                "created": "1970-01-01T00:00:00.000Z",
+                "role": ["Rguest"]
+                })
+            if len(docs) >= self.bulk_size:
+                send_bulk(docs)
+                docs = []
+        if len(docs) > 0:
+            send_bulk(docs)
         progress.close()
