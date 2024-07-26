@@ -102,8 +102,10 @@ class FessSearch(BaseSearch):
             progress.update(len(bulk_data))
         docs: List[Dict[str, Any]] = []
         for idx in corpus:
-            title = corpus[idx].get("title", None)
-            content = corpus[idx].get("text", None)
+            title = corpus[idx].get("title", "")
+            if len(title) == 0:
+                title = "-"
+            content = corpus[idx].get("text", "")
             docs.append({
                 "lang": self.language,
                 "title": title,
