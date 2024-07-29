@@ -77,6 +77,7 @@ class FessSearch(BaseSearch):
                                     "q": query,
                                     "start": 0,
                                     "num": size,
+                                    "lang": self.language,
                                 })
         if response.status_code == 200:
             for doc in response.json().get("data", []):
